@@ -27,15 +27,25 @@
 
 		<div class="box">
 			<% list.forEach(i=>{%>
-		<div class="item">
-			<form action='/delete' method="post">
-<input type="checkbox" onChange="this.form.submit()" name="checked" value='<%=i._id%>'/>
-				<p ><%=i.name%></p>
-			</form>
-				
+			<div class="item">
+				<form action="/delete" method="post">
+					<input
+						type="checkbox"
+						onChange="this.form.submit()"
+						name="checked"
+						value="<%=i._id%>"
+					/>
+					<p value="<%=listTitle %>" name="lists">
+						<%=i.name%>
+					</p>
+					<input
+						type="hidden"
+						name="list"
+						value="<%=listTitle %>"
+					/>
+				</form>
 			</div>
 			<%})%>
-			
 
 			<form action="/" method="post" class="item">
 				<input
@@ -47,14 +57,12 @@
 				/>
 				<button
 					type="submit"
-					name="button"
-					value=<%= listTitle %>
-					>+
+					name="list"
+					value="<%=listTitle %>"
+				>
+					+
 				</button>
 			</form>
-			<!-- <form action="/todo" method="delete">
-				<button type="submit">delete</button>
-			</form> -->
 		</div>
 	</body>
 </html>
