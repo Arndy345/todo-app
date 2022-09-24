@@ -4,6 +4,7 @@ let ejs = require("ejs");
 const app = express();
 const bodyParser = require("body-parser");
 const mongoose = require("mongoose");
+const _ = require("lodash");
 
 let list = ["Get food", "buy food", "cook food"];
 // let workList = [];
@@ -33,17 +34,14 @@ const List = mongoose.model("List", listsSchema);
 const item1 = new Item({
 	name: "Welcome to your todo list",
 });
-const item2 = new Item({
-	name: "Clean the house",
-});
+// const item2 = new Item({
+// 	name: "Clean the house",
+// });
 
-const item3 = new Item({
-	name: "Buy books",
-});
-const defaultList = [item1, item2, item3];
-// console.log(defaultList);
-
-// Item.deleteMany({ name: "Clean the house" });
+// const item3 = new Item({
+// 	name: "Buy books",
+// });
+const defaultList = [item1];
 
 app.get("/", (req, res) => {
 	Item.find({}, (err, data) => {
@@ -71,18 +69,30 @@ app.get("/", (req, res) => {
 
 app.post("/", (req, res) => {
 	const newTodo = req.body.todo;
-	if (newTodo.trim()) {
-		const item4 = new Item({
-			name: newTodo,
-		});
-		// Item.insertMany([item4], (err) => {});
-		item4.save();
+	const listName = req.body.list;
+	const newTask = new Item({
+		name: newTodo,
+	});
+	if (newTodo.trim() && listName === "Today") {
+		newTask.save();
 		res.redirect("/");
+	} else {
+		List.findOne(
+			{ name: listName },
+			(err, data) => {
+				data.items.push(newTask);
+				data.save();
+
+				res.redirect("/" + listName);
+			}
+		);
 	}
 });
 
 app.get("/:url", (req, res) => {
-	const customListName = req.params.url;
+	const customListName = _.capitalize(
+		req.params.url
+	);
 	const list = new List({
 		name: customListName,
 		items: defaultList,
@@ -93,13 +103,13 @@ app.get("/:url", (req, res) => {
 		(err, data) => {
 			if (!err) {
 				if (data) {
-					res.redirect("/" + customListName);
-				} else {
-					list.save();
 					res.render("todo-list", {
 						list: data.items,
 						listTitle: data.name,
 					});
+				} else {
+					list.save();
+					res.redirect("/" + customListName);
 				}
 			}
 		}
@@ -108,14 +118,30 @@ app.get("/:url", (req, res) => {
 
 app.post("/delete", (req, res) => {
 	const id = req.body.checked;
-	Item.deleteOne({ _id: id }, (err) => {
-		if (err) {
-			console.log("errors");
-		} else {
-			console.log("Deleted");
-		}
-	});
-	res.redirect("/");
+	const list = req.body.list;
+	if (list === "Today") {
+		Item.deleteOne({ _id: id }, (err) => {
+			if (err) {
+				console.log("errors");
+			} else {
+				console.log("Deleted");
+				res.redirect("/");
+			}
+		});
+	} else {
+		List.findOneAndUpdate(
+			{ name: list },
+			{ $pull: { items: { _id: id } } },
+			(err) => {
+				if (err) {
+					console.log(err);
+				} else {
+					console.log("deleted");
+					res.redirect("/" + list);
+				}
+			}
+		);
+	}
 });
 
 app.listen("3000", () => {
